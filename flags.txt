@@ -1,0 +1,2 @@
+flag worker : MB{fwd_m3_y0ur_$h}
+flag admin : MB{k3yg3ni3_sOrt_d3_s4_l4mp3}

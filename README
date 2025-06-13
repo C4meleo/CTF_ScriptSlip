@@ -1,0 +1,10 @@
+Titre : ScriptSlip 
+
+MindBreak Co., éditeur de logiciels de cybersécurité, vient de déployer une chaîne d’automatisation interne :
+
+Les équipes IT ont bricolé dans l'urgence, la configuration .
+Les bruits de couloir parlent d’une faille permettant de s’exécuter avec plus de privilèges que prévu. Votre mission : vérifier (et prouver) que l’on peut contourner la procédure.
+“Si vous pouvez lire le fichier interne réservé à admin, c’est que le SOC doit revoir son pipeline d’automatisation.” — CTO de MindBreak
+(Pas besoin de bruteforce SMTP)
+
+Trouver le contenu /home/worker/flag.txt et /home/admin/flag.txt pour trouver les 2 flags.
